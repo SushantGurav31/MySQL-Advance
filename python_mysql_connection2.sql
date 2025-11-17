@@ -1,0 +1,1 @@
+create database python_mysql_connection2;

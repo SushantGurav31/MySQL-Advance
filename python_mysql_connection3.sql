@@ -1,0 +1,3 @@
+create database python_mysql_connection3;
+
+use python_mysql_connection3;
