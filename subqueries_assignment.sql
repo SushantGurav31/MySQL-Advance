@@ -1,96 +1,91 @@
-create database Medical;
+create database subqueries_assignment;
 
-use Medical;
+use subqueries_assignment;
 
+CREATE TABLE departments (
+    dept_id INT PRIMARY KEY,
+    dept_name VARCHAR(50),
+    location VARCHAR(50)
+);
 
--- 1) Display all records from the dataset 
-select * from medical_cost_prediction_dataset;
+INSERT INTO departments (dept_id, dept_name, location) VALUES
+(1, 'HR', 'Mumbai'),
+(2, 'Sales', 'Delhi'),
+(3, 'IT', 'Bangalore'),
+(4, 'Finance', 'Pune'),
+(5, 'Marketing', 'Chennai');
 
+CREATE TABLE employees (
+    emp_id INT PRIMARY KEY,
+    name VARCHAR(50),
+    job_title VARCHAR(50),
+    salary DECIMAL(10,2),
+    dept_id INT,
+    hire_date DATE,
+    FOREIGN KEY (dept_id) REFERENCES departments(dept_id)
+);
 
--- 2) Show only age , sex , bmi, and chargs columns.
-select age, Gender, bmi, previous_year_cost from medical_cost_prediction_dataset;
+INSERT INTO employees (emp_id, name, job_title, salary, dept_id, hire_date) VALUES
+(101, 'Amit', 'HR Executive', 45000, 1, '2020-02-15'),
+(102, 'Neha', 'HR Manager', 70000, 1, '2018-08-10'),
+(103, 'Raj', 'Sales Executive', 40000, 2, '2021-06-22'),
+(104, 'Priya', 'Sales Manager', 85000, 2, '2017-04-18'),
+(105, 'Karan', 'Software Engineer', 65000, 3, '2019-03-12'),
+(106, 'Sneha', 'System Analyst', 90000, 3, '2016-11-30'),
+(107, 'Arjun', 'Finance Analyst', 50000, 4, '2021-01-05'),
+(108, 'Meera', 'Accountant', 60000, 4, '2019-09-23'),
+(109, 'Vikram', 'Marketing Executive', 48000, 5, '2020-05-10'),
+(110, 'Ananya', 'Marketing Head', 95000, 5, '2015-12-19');
 
+select * from departments;
 
--- 3) Find all records where the person is a smoker.
-select * from medical_cost_prediction_dataset where smoker = "Yes";
+select * from employees;
 
-
--- 4) List all unique regions available in the dataset. 
-select distinct city_type from medical_cost_prediction_dataset;
-
-
--- 5) Count the total number of records. 
-select count(*) as total_records from medical_cost_prediction_dataset;
-
-
--- 6) Find the average medical charges 
-select avg(annual_medical_cost) as average_medical_charges from medical_cost_prediction_dataset;
-
-
-
--- 7) Display records where BMI is greater than 30
-select * from medical_cost_prediction_dataset where bmi > 30;
-
-
-
--- 8) Count how many males and feamles are in the dataset
-select gender, count(*) as total_males_females from medical_cost_prediction_dataset group by gender;
-
-
--- 9) Show all records where the number of children id 0
-select count(*) as total from medical_cost_prediction_dataset where age < 18 ;
-
-
-
--- 10 ) Find the minimum ad maximum medical charges 
-select min(annual_medical_cost) as minnimum_charges, 
-max(annual_medical_cost) as maximum_charges 
-from medical_cost_prediction_dataset;
-
-
--- 11) Find the average charges for smokers and non smokers separately. 
-select smoker, avg(annual_medical_cost) as avg_charges
-from medical_cost_prediction_dataset group by smoker;
+-- single row subquery 
+-- Get employees who earn more than the average salary 
+select name, salary 
+from employees 
+where salary > (select avg(salary) from employees);
 
 
--- 12) Count how many people belong to each region
-select city_type, count(*) as total_people
-from medical_cost_prediction_dataset
-group by city_type ;
+-- Multi-row Subquery (Using IN)
+-- Get employees who work in departments wirh 'Sales' or 'HR'
+select name 
+from employees 
+where dept_id in (select dept_id from departments where dept_name in ('Sales', 'HR'));
 
 
--- 13) find the average BMI for males and frmales 
-select gender, avg(bmi) as average_males_females from medical_cost_prediction_dataset group by gender;
+-- multi column subquery
+-- Find employees with the same department and salary as someone named'':
+select name 
+from employees 
+where (dept_id,salary) in 
+(select dept_id, salary from employees where name = 'John');
+
+-- corerelated Subquery 
+-- Find employees who earn more than the average slary of their own departments
+select name, dept_id, salary 
+from employees e 
+where salary > (
+select avg(salary) 
+from employees 
+where dept_id = e.dept_id);
 
 
--- 14) List record where age is between 25 and 40
-select * from medical_cost_prediction_dataset where age between 25 and 40;
+-- Subquery in from (Derived Table)
+-- Show departments and their average salaries, then filter:
+select dept_id, avg_salary 
+from (
+select dept_id, avg(salary) as avg_salary
+from employees 
+group by dept_id
+) as dept_avg
+where avg_salary > 50000;
 
-
-
--- 15) Show all records where charges exeed 50000 
-select * from medical_cost_prediction_dataset where annual_medical_cost > 50000;
-
-
--- 16) Calculate total medical charges per region 
-select city_type, sum(annual_medical_cost) as totla_charges from medical_cost_prediction_dataset group by city_type;
-
-
--- 17)Find the average charges for people haing at least 2 children
-
-
-
--- 18) Display record sorted by charges in decending order. 
-select * from medical_cost_prediction_dataset order by annual_medical_cost desc;
-
-
-
--- 19) count how many smokers are there in each region
-select city_type, count(*) as smoker_count
-from medical_cost_prediction_dataset
-where smoker = "yes"
-group by city_type;
-
-
--- 20) Find The average age of people who are smoker
-select avg(age) as avg_age from medical_cost_prediction_dataset where smoker = "yes";
+-- Subquery in select 
+-- Add a column showing each employees departments average:
+select name, salary ,
+(select avg(salary)
+from employees e2
+where e2.dept_id  = e1.dept_id) as dept_avg
+from employees e1;
